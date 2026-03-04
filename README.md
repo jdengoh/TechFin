@@ -2,7 +2,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Create local postgres, obtain the connection string
+Fill in your env.local file
+Run prisma commands
+`npx prisma migrate dev --name init` to create DB tables
+`npx primsa generate` to generate the prisma client
+
+Next, run the development server:
 
 ```bash
 npm run dev
@@ -13,6 +19,13 @@ pnpm dev
 # or
 bun dev
 ```
+
+If run into node module errors,
+`rm -rf node_modules`
+`rm -rf .next`
+`rm package-lock.json`
+`npm install`
+then start again
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
