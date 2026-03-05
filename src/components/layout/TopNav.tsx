@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { TrendingUp } from "lucide-react";
+import { PremiumToggle } from "@/components/ui/bouncy-toggle";
 
 const navLinks = [
   { href: "/", label: "Dashboard" },
@@ -14,12 +16,13 @@ const navLinks = [
 
 export function TopNav() {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <TrendingUp className="h-5 w-5 text-emerald-500" />
+          <TrendingUp className="h-5 w-5 text-primary" />
           <span>TechFin</span>
         </Link>
         <nav className="flex items-center gap-1">
@@ -38,6 +41,15 @@ export function TopNav() {
             </Link>
           ))}
         </nav>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-muted-foreground select-none">
+            {theme === "dark" ? "Dark" : "Light"}
+          </span>
+          <PremiumToggle
+            defaultChecked={theme === "dark"}
+            onChange={(checked) => setTheme(checked ? "dark" : "light")}
+          />
+        </div>
       </div>
     </header>
   );
