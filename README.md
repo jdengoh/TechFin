@@ -5,8 +5,12 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 Create local postgres, obtain the connection string
 Fill in your env.local file
 Run prisma commands
+
+```
 `npx prisma migrate dev --name init` to create DB tables
 `npx primsa generate` to generate the prisma client
+`npm run db:seed` to seed the DB with the demo user
+```
 
 Next, run the development server:
 
@@ -21,10 +25,12 @@ bun dev
 ```
 
 If run into node module errors,
+```
 `rm -rf node_modules`
 `rm -rf .next`
 `rm package-lock.json`
 `npm install`
+```
 then start again
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
