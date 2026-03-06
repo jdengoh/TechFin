@@ -2,57 +2,121 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repo Layout
+
+Monorepo with two main directories:
+- **`/frontend`** — React 19 + Vite 6 + TypeScript + Tailwind CSS 4 + shadcn/ui + SWR
+- **`/backend`** — Python 3.12 + FastAPI + SQLAlchemy 2 (async) + Alembic + PostgreSQL
+
 ## Commands
 
+### Frontend
 ```bash
-npm run dev          # start dev server on localhost:3000
-npm run build        # production build (use to verify no TS/compile errors)
-
-# Database
-npx prisma migrate dev --name <name>   # create + apply a new migration
-npx prisma generate                     # regenerate Prisma client after schema changes
-npm run db:seed                         # seed demo user (demo-user-001)
-npx prisma studio                       # GUI to inspect DB
+cd frontend
+npm install           # install dependencies
+npm run dev           # start dev server on localhost:5173
+npm run build         # production build (tsc + vite build)
 ```
 
-If you hit node module errors: `rm -rf node_modules .next package-lock.json && npm install`
+### Backend
+```bash
+cd backend
+uv sync                                        # install Python deps
+cp .env.example .env                           # configure env vars
+uv run alembic upgrade head                    # run DB migrations
+uv run python scripts/seed.py                  # seed demo user (username=demo, password=password)
+uv run uvicorn app.main:app --reload --port 8000  # start dev server on :8000
+```
+
+### Database
+```bash
+cd backend
+uv run alembic revision --autogenerate -m "description"  # create migration
+uv run alembic upgrade head                               # apply migrations
+```
 
 ## Architecture
 
-### Prisma 7 (critical differences from Prisma 5/6)
-- **No `url` in `schema.prisma`** — datasource URL lives in `prisma.config.ts` only
-- **`PrismaClient` requires an adapter** — uses `@prisma/adapter-pg` + `pg` for local Postgres
-- The singleton in `src/lib/prisma.ts` creates a `PrismaPg` adapter from `process.env.DATABASE_URL`
-- `prisma.config.ts` loads `.env.local` via `dotenv` before the CLI reads it
+### Dev Networking
+Vite proxies `/api/*` requests to FastAPI on `http://localhost:8000`.
 
-### Auth / User model
-- No real auth. Single hardcoded demo user: `id = "demo-user-001"`
-- `src/lib/demo-user.ts` exports `DEMO_USER_ID` (reads `process.env.DEMO_USER_ID`, falls back to `"demo-user-001"`)
-- All API routes use `DEMO_USER_ID` for all DB queries
+### Auth
+- Real JWT auth: username/password login, token stored in localStorage, sent as Bearer
+- `POST /api/auth/register` — create user, return JWT
+- `POST /api/auth/login` — verify credentials, return JWT
+- `GET /api/auth/me` — validate token, return user
+- All protected routes require Bearer token via `get_current_user` dependency
 
-### API routes (`src/app/api/`)
-- `holdings/route.ts` — GET (list), POST (upsert by userId+ticker)
-- `holdings/[id]/route.ts` — DELETE
-- `tickers/route.ts` — GET with `?q=` search against hardcoded list in `src/lib/tickers.ts`
-- `yahoo-finance/route.ts` — calls RapidAPI; falls back to mock if key is placeholder
-- `reddit/route.ts` — `?subreddit=` param; OAuth `client_credentials` with in-memory token cache; falls back to mock
-- `social/twitter`, `social/linkedin` — always return mock data (boilerplate)
-- `sentiment/route.ts` — always returns mock from `src/lib/sentiment/mock-sentiment.ts`
-- `suggestions/route.ts` — stub: mirrors user's own holdings as suggestions
-- `user/me/route.ts` — GET `hasOnboarded`
-- `user/onboarded/route.ts` — PATCH sets `hasOnboarded = true`
+### Backend (FastAPI)
 
-### External API clients (`src/lib/api/`)
-All clients follow the same pattern: try real API, catch/warn and return mock data on failure.
-- `yahoo-finance.ts` — `fetch` with `next: { revalidate: 300 }`
-- `reddit.ts` — module-level token cache, refreshes on expiry or 401
-- `twitter.ts`, `linkedin.ts` — mock-only, marked with `// TODO: Replace with real ...`
+#### Database (SQLAlchemy 2 + Alembic)
+- `app/database.py` — async engine, `async_sessionmaker`, `get_db` dependency
+- `app/models/` — `User` (username, password_hash, has_onboarded) + `Holding` (ticker, quantity, user_id)
+- Alembic configured for async migrations with psycopg
 
-### Frontend data fetching
-SWR hooks in `src/hooks/` — one per data domain. `useHoldings` does optimistic updates for add/delete.
+#### API Routes (`app/routes/`)
+- `auth.py` — POST register, POST login, GET me
+- `holdings.py` — GET list, POST upsert, DELETE by id (all auth-protected)
+- `tickers.py` — GET `?q=` search (auth-protected)
+- `user.py` — PATCH onboarded (auth-protected)
+- `suggestions.py` — GET stub: mirrors holdings (auth-protected)
+- `yahoo_finance.py` — GET articles via RapidAPI, mock fallback (auth-protected)
+- `reddit.py` — GET `?subreddit=`, OAuth token cache, mock fallback (auth-protected)
+- `social.py` — GET twitter/linkedin mock data (auth-protected)
+- `sentiment.py` — GET mock sentiment data (auth-protected)
 
-### First-login onboarding
-`FirstLoginDialog` in root `layout.tsx` → `useFirstLogin` hook checks `/api/user/me`. On save: POST each holding → PATCH `/api/user/onboarded`. Dialog is non-dismissable (blocks `onInteractOutside`).
+#### External API Services (`app/services/`)
+All follow try-real-API / fallback-to-mock pattern:
+- `yahoo_finance.py` — httpx + RapidAPI
+- `reddit.py` — OAuth client_credentials, token cache, retry on 401
+- `twitter.py`, `linkedin.py` — mock-only
+- `sentiment.py` — mock-only
 
-### Path alias
-`@/*` → `./src/*` (configured in `tsconfig.json`). All imports use `@/`.
+### Frontend (React + Vite)
+
+#### Routing
+```
+/login            → LoginPage
+/register         → RegisterPage
+/ (protected)     → AppLayout (TopNav + FirstLoginDialog + Outlet)
+  /               → DashboardPage
+  /yahoo-finance  → YahooFinancePage
+  /social-media   → SocialMediaPage
+  /settings       → SettingsPage
+```
+
+#### Auth
+- `src/contexts/AuthContext.tsx` — AuthProvider with login/register/logout
+- `src/lib/auth.ts` — getToken/setToken/clearToken (localStorage)
+- `src/lib/fetcher.ts` — authedFetcher for SWR (injects Bearer, redirects on 401)
+- `src/components/layout/ProtectedRoute.tsx` — redirects to /login if no user
+
+#### Theme
+- Custom `ThemeContext` replacing next-themes (~30 LOC)
+- Toggles `.dark` class on document root, persists to localStorage
+
+#### Data Fetching
+SWR hooks in `src/hooks/` with snake_case → camelCase transforms:
+- `useHoldings` — optimistic add/delete
+- `useFirstLogin` — checks `/api/auth/me`, manages onboarding
+- `useYahooFinance`, `useReddit`, `useSentiment`
+
+#### Path Alias
+`@/*` → `./src/*` (configured in `tsconfig.json` and `vite.config.ts`)
+
+## Environment Variables
+
+### Backend (.env)
+```
+DATABASE_URL=postgresql+psycopg://USER:PASSWORD@localhost:5432/techfin
+SECRET_KEY=change-me-in-production
+RAPIDAPI_KEY=your_rapidapi_key_here
+RAPIDAPI_YAHOO_FINANCE_HOST=yahoo-finance15.p.rapidapi.com
+REDDIT_CLIENT_ID=your_reddit_client_id
+REDDIT_CLIENT_SECRET=your_reddit_client_secret
+REDDIT_USER_AGENT=TechFin/1.0 by YourRedditUsername
+```
+
+## Seed User
+- Username: `demo`, Password: `password`
+- Created by `scripts/seed.py`

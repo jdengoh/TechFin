@@ -1,0 +1,25 @@
+[project]
+name = "techfin-backend"
+version = "0.1.0"
+description = "TechFin FastAPI backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]",
+    "uvicorn[standard]",
+    "sqlalchemy>=2.0",
+    "alembic",
+    "psycopg[binary]",
+    "python-jose[cryptography]",
+    "bcrypt",
+    "httpx",
+    "pydantic-settings",
+    "python-dotenv",
+    "greenlet",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
