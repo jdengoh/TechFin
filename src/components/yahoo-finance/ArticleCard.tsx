@@ -45,15 +45,17 @@ export function ArticleCard({ article }: ArticleCardProps) {
             {formatDate(article.publishedAt)}
           </span>
         </div>
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-xs text-primary hover:underline"
-        >
-          Read More
-          <ExternalLink className="h-3 w-3" />
-        </a>
+        {article.url && article.url !== "#" && (
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            Read More
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
       </CardFooter>
     </Card>
   );

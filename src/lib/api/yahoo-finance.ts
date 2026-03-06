@@ -11,7 +11,7 @@ export async function fetchYahooFinanceNews(): Promise<Article[]> {
 
   try {
     const response = await fetch(
-      `https://${RAPIDAPI_HOST}/api/v2/markets/news?tickers=AAPL,MSFT,GOOGL,NVDA&type=ALL`,
+      `https://${RAPIDAPI_HOST}/api/v1/markets/news?tickers=AAPL,MSFT,GOOGL,NVDA&type=ALL`,
       {
         headers: {
           "x-rapidapi-key": RAPIDAPI_KEY,
