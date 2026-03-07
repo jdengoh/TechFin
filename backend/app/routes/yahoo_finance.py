@@ -2,10 +2,8 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
-from app.database import get_db
 from app.models.user import User
 from app.schemas.article import ArticleResponse
 from app.services.yahoo_finance import fetch_yahoo_finance_news

@@ -28,9 +28,11 @@ async def _run_yahoo_rss_job() -> None:
         await db.flush()
 
         try:
-            rows = fetch_yahoo_rss()
+            loop = __import__("asyncio").get_event_loop()
+            rows = await loop.run_in_executor(None, fetch_yahoo_rss)
             articles_fetched = len(rows)
 
+            new_ids: set[str] = set()
             for row in rows:
                 is_new, record = await upsert_raw_article(
                     db=db,
@@ -46,12 +48,13 @@ async def _run_yahoo_rss_job() -> None:
                 )
                 if is_new:
                     articles_new += 1
+                    new_ids.add(row["news_id"])
 
             await db.flush()
 
             # Graph ingestion for new articles
             for row in rows:
-                if not row.get("_already_existed", False):
+                if row["news_id"] in new_ids:
                     try:
                         await ingest_article_to_graph(
                             news_id=row["news_id"],

@@ -77,7 +77,6 @@ async def extract_entities(title: str, content: str) -> dict:
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.0,
             response_format={"type": "json_object"},
             timeout=30.0,
         )
