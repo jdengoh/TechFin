@@ -3,17 +3,18 @@ import json
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 API_KEY   = "47ZXJBPGFZ021WCA"
-TIME_FROM = "20250101T0000"   # YYYYMMDDTHHMM
+TIME_FROM = "20260201T0000"   # YYYYMMDDTHHMM
 TIME_TO   = "20260308T2359"   # YYYYMMDDTHHMM
 # ──────────────────────────────────────────────────────────────────────────────
 
-OUTPUT_FILE = "output.json"
+OUTPUT_FILE = "earnings.json"
 
 params = {
     "function":  "NEWS_SENTIMENT",
     "time_from": TIME_FROM,
     "time_to":   TIME_TO,
     "apikey":    API_KEY,
+    "topics":    "earnings",
     "limit":     1000,
 }
 
