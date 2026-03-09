@@ -5,7 +5,7 @@ export function SocialMediaPage() {
   return (
     <PageWrapper
       title="Social Media"
-      description="Community discussions from Reddit, Twitter, and LinkedIn"
+      description="Community discussions from Reddit"
     >
       <SocialTabs />
     </PageWrapper>

@@ -6,8 +6,8 @@ import { TrendingUp, LogOut } from "lucide-react";
 import { PremiumToggle } from "@/components/ui/bouncy-toggle";
 
 const navLinks = [
-  { href: "/", label: "Dashboard" },
-  { href: "/yahoo-finance", label: "Yahoo Finance" },
+  { href: "/", label: "Events" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/social-media", label: "Social Media" },
   { href: "/settings", label: "Settings" },
 ];
