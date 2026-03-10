@@ -15,6 +15,10 @@ dependencies = [
     "pydantic-settings",
     "python-dotenv",
     "greenlet",
+    "langgraph>=1.1.0",
+    "langchain-openai>=1.1.11",
+    "langchain-core>=1.2.18",
+    "neo4j>=6.1.0",
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -4,7 +4,20 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import auth, holdings, tickers, user, suggestions, yahoo_finance, reddit, social, sentiment, sectors, market_movers
+from app.routes import (
+    auth,
+    holdings,
+    tickers,
+    user,
+    suggestions,
+    yahoo_finance,
+    reddit,
+    social,
+    sentiment,
+    sectors,
+    market_movers,
+    ai_agents,
+)
 
 
 @asynccontextmanager
@@ -33,3 +46,4 @@ app.include_router(social.router)
 app.include_router(sentiment.router)
 app.include_router(sectors.router)
 app.include_router(market_movers.router)
+app.include_router(ai_agents.router)
