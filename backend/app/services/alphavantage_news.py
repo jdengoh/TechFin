@@ -69,8 +69,8 @@ async def fetch_alphavantage_news(
             continue
         seen_ids.add(news_id)
 
-        ticker_sentiment = article.get("ticker_sentiment", [])
-        ticker_hint = ticker_sentiment[0]["ticker"] if ticker_sentiment else None
+        av_ticker_sentiment = article.get("ticker_sentiment", [])
+        ticker_hint = av_ticker_sentiment[0]["ticker"] if av_ticker_sentiment else None
 
         raw_tags = [t["topic"] for t in article.get("topics", [])]
 
@@ -84,6 +84,11 @@ async def fetch_alphavantage_news(
             "platform": "alphavantage",
             "ticker_hint": ticker_hint,
             "raw_tags": raw_tags,
+            "sentiment_score": article.get("overall_sentiment_score"),
+            "ticker_sentiment": [
+                {t["ticker"]: float(t["ticker_sentiment_score"])}
+                for t in av_ticker_sentiment
+            ],
         })
 
     logger.info("[alphavantage] Fetched %s unique articles", len(rows))

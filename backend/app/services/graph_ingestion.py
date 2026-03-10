@@ -212,6 +212,8 @@ async def upsert_raw_article(
     platform: str,
     ticker_hint: str | None = None,
     raw_tags: list[str] | None = None,
+    sentiment_score: float | None = None,
+    ticker_sentiment: list | None = None,
 ) -> tuple[bool, "RawNewsArticle"]:  # noqa: F821
     """Insert into raw_news_articles if not exists. Returns (is_new, record)."""
     from app.models.raw_news import RawNewsArticle
@@ -233,6 +235,8 @@ async def upsert_raw_article(
         platform=platform,
         ticker_hint=ticker_hint,
         raw_tags=raw_tags or [],
+        sentiment_score=sentiment_score,
+        ticker_sentiment=ticker_sentiment,
     )
     db.add(record)
     await db.flush()

@@ -3,9 +3,10 @@ import { VercelTabs } from "@/components/ui/vercel-tabs";
 import { ArticleCard } from "@/components/ui/article-cards";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGraphThemes } from "@/hooks/useGraphThemes";
+import { useGraphThemes, type GraphTheme } from "@/hooks/useGraphThemes";
 import { useGraphEvents } from "@/hooks/useGraphEvents";
 import { getSentimentInfo } from "@/lib/sentiment-utils";
+import { ThemeArticlesModal } from "@/components/events/ThemeArticlesModal";
 import { CalendarDays, Newspaper, Tag } from "lucide-react";
 
 const TABS = [
@@ -35,7 +36,7 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-function ThemesGrid() {
+function ThemesGrid({ onThemeClick }: { onThemeClick: (theme: GraphTheme) => void }) {
   const { themes, isLoading, error } = useGraphThemes(15);
 
   if (isLoading) {
@@ -70,20 +71,21 @@ function ThemesGrid() {
           : null;
 
         return (
-          <ArticleCard
-            key={theme.name}
-            category="Macro Theme"
-            title={theme.name}
-            meta={`${theme.articleCount} article${theme.articleCount !== 1 ? "s" : ""}`}
-            gradient={sentimentGradient(theme.avgSentiment)}
-            badge={
-              sentiment ? (
-                <Badge className={sentiment.badgeClasses + " text-xs"}>
-                  {sentiment.label}
-                </Badge>
-              ) : undefined
-            }
-          />
+          <div key={theme.name} className="cursor-pointer" onClick={() => onThemeClick(theme)}>
+            <ArticleCard
+              category="Macro Theme"
+              title={theme.name}
+              meta={`${theme.articleCount} article${theme.articleCount !== 1 ? "s" : ""}`}
+              gradient={sentimentGradient(theme.avgSentiment)}
+              badge={
+                sentiment ? (
+                  <Badge className={sentiment.badgeClasses + " text-xs"}>
+                    {sentiment.label}
+                  </Badge>
+                ) : undefined
+              }
+            />
+          </div>
         );
       })}
     </div>
@@ -158,6 +160,7 @@ function EventsList() {
 
 export function EventsTabs() {
   const [activeTab, setActiveTab] = useState("themes");
+  const [selectedTheme, setSelectedTheme] = useState<GraphTheme | null>(null);
 
   return (
     <div>
@@ -169,8 +172,15 @@ export function EventsTabs() {
         />
       </div>
 
-      {activeTab === "themes" && <ThemesGrid />}
+      {activeTab === "themes" && (
+        <ThemesGrid onThemeClick={setSelectedTheme} />
+      )}
       {activeTab === "events" && <EventsList />}
+
+      <ThemeArticlesModal
+        theme={selectedTheme}
+        onClose={() => setSelectedTheme(null)}
+      />
     </div>
   );
 }

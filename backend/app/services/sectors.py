@@ -1,98 +1,132 @@
 import asyncio
 import logging
+import time
 
 import httpx
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
+# AlphaVantage name → ETF symbol + market weight
 SECTOR_MAP = [
-    {"symbol": "XLK",  "name": "Technology",          "market_weight": 29.0},
-    {"symbol": "XLF",  "name": "Financials",           "market_weight": 13.0},
-    {"symbol": "XLV",  "name": "Healthcare",           "market_weight": 12.0},
-    {"symbol": "XLY",  "name": "Consumer Cyclical",    "market_weight": 10.0},
-    {"symbol": "XLC",  "name": "Comm. Services",       "market_weight": 8.0},
-    {"symbol": "XLI",  "name": "Industrials",          "market_weight": 8.0},
-    {"symbol": "XLP",  "name": "Consumer Defensive",   "market_weight": 6.0},
-    {"symbol": "XLE",  "name": "Energy",               "market_weight": 4.0},
-    {"symbol": "XLB",  "name": "Materials",            "market_weight": 2.5},
-    {"symbol": "XLU",  "name": "Utilities",            "market_weight": 2.5},
-    {"symbol": "XLRE", "name": "Real Estate",          "market_weight": 2.5},
+    {"av_name": "Information Technology", "symbol": "XLK",  "name": "Technology",          "market_weight": 29.0},
+    {"av_name": "Financials",             "symbol": "XLF",  "name": "Financials",           "market_weight": 13.0},
+    {"av_name": "Health Care",            "symbol": "XLV",  "name": "Healthcare",           "market_weight": 12.0},
+    {"av_name": "Consumer Discretionary", "symbol": "XLY",  "name": "Consumer Cyclical",    "market_weight": 10.0},
+    {"av_name": "Communication Services", "symbol": "XLC",  "name": "Comm. Services",       "market_weight": 8.0},
+    {"av_name": "Industrials",            "symbol": "XLI",  "name": "Industrials",          "market_weight": 8.0},
+    {"av_name": "Consumer Staples",       "symbol": "XLP",  "name": "Consumer Defensive",   "market_weight": 6.0},
+    {"av_name": "Energy",                 "symbol": "XLE",  "name": "Energy",               "market_weight": 4.0},
+    {"av_name": "Materials",              "symbol": "XLB",  "name": "Materials",            "market_weight": 2.5},
+    {"av_name": "Utilities",             "symbol": "XLU",  "name": "Utilities",            "market_weight": 2.5},
+    {"av_name": "Real Estate",            "symbol": "XLRE", "name": "Real Estate",          "market_weight": 2.5},
 ]
 
+_cache: dict = {"data": None, "ts": 0.0}
+_CACHE_TTL = 15 * 60  # 15 minutes
 
-def _mock_sectors() -> list[dict]:
-    mock_returns = [1.85, 0.42, -0.31, 2.10, -1.20, 0.75, -0.55, 3.20, 0.15, -0.80, 0.60]
-    mock_ytd = [8.45, 4.20, -1.50, 12.30, -3.10, 5.60, 2.10, 18.40, 1.80, -2.30, 3.70]
-    mock_prices = [215.30, 42.15, 138.90, 190.45, 74.20, 118.60, 72.40, 94.15, 88.20, 65.30, 42.80]
-    return [
-        {
-            "symbol": s["symbol"],
-            "name": s["name"],
-            "day_return": mock_returns[i],
-            "ytd_return": mock_ytd[i],
-            "market_weight": s["market_weight"],
-            "price": mock_prices[i],
+
+async def _fetch_alphavantage_sectors(api_key: str) -> dict[str, dict]:
+    """Returns mapping of av_name -> {day_return, ytd_return}."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            "https://www.alphavantage.co/query",
+            params={"function": "SECTOR", "apikey": api_key},
+            timeout=15.0,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+    if "Information" in data or "Note" in data:
+        logger.warning("[sectors] AlphaVantage rate limited: %s", data.get("Information") or data.get("Note"))
+        return {}
+
+    realtime = data.get("Rank A: Real-Time Performance", {})
+    ytd = data.get("Rank F: Year-to-Date Performance", {})
+
+    result = {}
+    for entry in SECTOR_MAP:
+        av = entry["av_name"]
+        def _pct(val: str) -> float:
+            try:
+                return float(val.replace("%", ""))
+            except Exception:
+                return 0.0
+        result[av] = {
+            "day_return": _pct(realtime.get(av, "0%")),
+            "ytd_return": _pct(ytd.get(av, "0%")),
         }
-        for i, s in enumerate(SECTOR_MAP)
-    ]
+    return result
 
 
-async def _fetch_single_sector(client: httpx.AsyncClient, sector: dict) -> dict:
-    symbol = sector["symbol"]
+async def _fetch_etf_price(client: httpx.AsyncClient, symbol: str) -> float:
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
     try:
         resp = await client.get(
             url,
-            params={"interval": "1d", "range": "ytd"},
+            params={"interval": "1d", "range": "1d"},
             headers={"User-Agent": "Mozilla/5.0"},
-            timeout=10.0,
+            timeout=8.0,
         )
         resp.raise_for_status()
-        data = resp.json()
-        meta = data["chart"]["result"][0]["meta"]
-
-        current_price = meta.get("regularMarketPrice", 0.0)
-        prev_close = meta.get("chartPreviousClose") or meta.get("previousClose", current_price)
-        day_return = ((current_price - prev_close) / prev_close * 100) if prev_close else 0.0
-
-        closes = data["chart"]["result"][0].get("indicators", {}).get("quote", [{}])[0].get("close", [])
-        valid_closes = [c for c in closes if c is not None]
-        if len(valid_closes) >= 2:
-            ytd_return = (valid_closes[-1] - valid_closes[0]) / valid_closes[0] * 100
-        else:
-            ytd_return = 0.0
-
-        return {
-            "symbol": symbol,
-            "name": sector["name"],
-            "day_return": round(day_return, 2),
-            "ytd_return": round(ytd_return, 2),
-            "market_weight": sector["market_weight"],
-            "price": round(current_price, 2),
-        }
+        meta = resp.json()["chart"]["result"][0]["meta"]
+        return round(meta.get("regularMarketPrice", 0.0), 2)
     except Exception as e:
-        logger.warning("[sectors] Failed to fetch %s: %s", symbol, e)
-        return None  # type: ignore[return-value]
+        logger.debug("[sectors] Price fetch failed for %s: %s", symbol, e)
+        return 0.0
+
+
+async def _fetch_yahoo_sector_prices() -> dict[str, float]:
+    symbols = [s["symbol"] for s in SECTOR_MAP]
+    async with httpx.AsyncClient() as client:
+        prices = await asyncio.gather(
+            *[_fetch_etf_price(client, sym) for sym in symbols],
+            return_exceptions=True,
+        )
+    return {
+        sym: (p if isinstance(p, float) else 0.0)
+        for sym, p in zip(symbols, prices)
+    }
 
 
 async def fetch_sector_data() -> list[dict]:
+    now = time.monotonic()
+    if _cache["data"] and now - _cache["ts"] < _CACHE_TTL:
+        return _cache["data"]
+
+    api_key = settings.ALPHAVANTAGE_API_KEY or "demo"
+    av_data: dict[str, dict] = {}
+    prices: dict[str, float] = {}
+
     try:
-        async with httpx.AsyncClient() as client:
-            results = await asyncio.gather(
-                *[_fetch_single_sector(client, s) for s in SECTOR_MAP],
-                return_exceptions=True,
-            )
-
-        sectors = []
-        mock = _mock_sectors()
-        for i, result in enumerate(results):
-            if isinstance(result, dict) and result is not None:
-                sectors.append(result)
-            else:
-                logger.warning("[sectors] Using mock for %s", SECTOR_MAP[i]["symbol"])
-                sectors.append(mock[i])
-        return sectors
-
+        av_data = await _fetch_alphavantage_sectors(api_key)
     except Exception as e:
-        logger.error("[sectors] Fetch error: %s", e)
-        return _mock_sectors()
+        logger.warning("[sectors] AlphaVantage SECTOR failed: %s", e)
+
+    try:
+        prices = await _fetch_yahoo_sector_prices()
+    except Exception as e:
+        logger.warning("[sectors] Yahoo price fetch failed: %s", e)
+
+    if not av_data and not prices:
+        logger.error("[sectors] All data sources failed, returning empty list")
+        return []
+
+    sectors = []
+    for entry in SECTOR_MAP:
+        av = entry["av_name"]
+        sym = entry["symbol"]
+        av_entry = av_data.get(av, {})
+        sectors.append({
+            "symbol": sym,
+            "name": entry["name"],
+            "day_return": av_entry.get("day_return", 0.0),
+            "ytd_return": av_entry.get("ytd_return", 0.0),
+            "market_weight": entry["market_weight"],
+            "price": prices.get(sym, 0.0),
+        })
+
+    _cache["data"] = sectors
+    _cache["ts"] = now
+    return sectors
