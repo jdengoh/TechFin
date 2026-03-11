@@ -4,9 +4,16 @@
 
 TechFin is an AI-powered personal finance dashboard that doesn't just track your stocks — it reads the world. By aggregating news across multiple sources, performing deep sentiment analysis, and mapping relationships between global events and financial sectors, TechFin gives retail investors the kind of macro-awareness that used to be reserved for institutional traders.
 
-**Live demo:** [tech-fin-xi.vercel.app](https://tech-fin-xi.vercel.app/)
+## Demo
 
-[![Demo Video](https://img.youtube.com/vi/Jn0XqxhPRJE/maxresdefault.jpg)](https://youtu.be/Jn0XqxhPRJE)
+Try it live at [tech-fin-xi.vercel.app](https://tech-fin-xi.vercel.app/) and log in with:
+
+- Username: `demo`
+- Password: `password`
+
+### Demo Video
+
+[Demo Video](https://youtu.be/Jn0XqxhPRJE)
 
 ---
 
@@ -24,23 +31,27 @@ On top of that graph sits a **LangGraph multi-agent AI chatbot** that can answer
 
 ---
 
-<!-- INSERT NEO4J GRAPH VISUALIZATION HERE -->
-<!-- Suggested: screenshot or export of the TechFin knowledge graph showing nodes (events, sectors, tickers) and their relationships -->
-![Neo4J graph](./neo4j.png)
+
+
+
+
+Neo4J graph
 
 ---
 
 ### Core Features
 
-| Feature | Description |
-|---|---|
-| **Event Intelligence** | Detects top geopolitical events, M&A, and macro-policy shifts in real time |
-| **Sentiment Grid** | Sector-by-sector sentiment heatmap updated daily |
-| **Graph-Powered Matching** | Neo4j graph traversals match news to the most affected sectors and tickers |
-| **AI Chatbot** | LangGraph multi-agent assistant that queries your knowledge graph to answer market questions |
-| **Portfolio Recommendations** | LLM-powered stock suggestions tuned to your holdings |
-| **Multi-Source Aggregation** | Yahoo Finance, Reddit, Twitter, LinkedIn — all in one feed |
-| **Social Pulse** | Community sentiment from Reddit and social platforms per ticker |
+
+| Feature                       | Description                                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| **Event Intelligence**        | Detects top geopolitical events, M&A, and macro-policy shifts in real time                   |
+| **Sentiment Grid**            | Sector-by-sector sentiment heatmap updated daily                                             |
+| **Graph-Powered Matching**    | Neo4j graph traversals match news to the most affected sectors and tickers                   |
+| **AI Chatbot**                | LangGraph multi-agent assistant that queries your knowledge graph to answer market questions |
+| **Portfolio Recommendations** | LLM-powered stock suggestions tuned to your holdings                                         |
+| **Multi-Source Aggregation**  | Yahoo Finance, Reddit, Twitter, LinkedIn — all in one feed                                   |
+| **Social Pulse**              | Community sentiment from Reddit and social platforms per ticker                              |
+
 
 ---
 
@@ -56,13 +67,15 @@ On top of that graph sits a **LangGraph multi-agent AI chatbot** that can answer
 
 ## Team
 
-| Builder | Handle |
-|---|---|
+
+| Builder       | Handle                                     |
+| ------------- | ------------------------------------------ |
 | Tuan Ding Ren | [@General3d](https://github.com/General3d) |
-| Jayce Goh | [@JyG12](https://github.com/JyG12) |
-| Boxuan | [@boxuan-yu](https://github.com/boxuan-yu) |
-| Shianne | [@zikyuu](https://github.com/zikyuu) |
-| Jden Goh | [@jdengoh](https://github.com/jdengoh) |
+| Jayce Goh     | [@JyG12](https://github.com/JyG12)         |
+| Boxuan        | [@boxuan-yu](https://github.com/boxuan-yu) |
+| Shianne       | [@zikyuu](https://github.com/zikyuu)       |
+| Jden Goh      | [@jdengoh](https://github.com/jdengoh)     |
+
 
 ---
 
@@ -133,3 +146,4 @@ Try it live at [tech-fin-xi.vercel.app](https://tech-fin-xi.vercel.app/) or run 
 
 - **Username:** `demo`
 - **Password:** `password`
+
