@@ -13,7 +13,8 @@ Try it live at [tech-fin-xi.vercel.app](https://tech-fin-xi.vercel.app/) and log
 
 ### Demo Video
 
-[Demo Video](https://youtu.be/Jn0XqxhPRJE)
+ [![Demo Video]([https://img.youtube.com/vi/Jn0XqxhPRJE/maxresdefault.jpg)](https://youtu.be/Jn0XqxhPRJE)](https://img.youtube.com/vi/Jn0XqxhPRJE/maxresdefault.jpg)](https://youtu.be/Jn0XqxhPRJE))    
+
 
 ---
 
@@ -30,10 +31,6 @@ At its core, TechFin uses a **custom knowledge graph** (powered by Neo4j) to mod
 On top of that graph sits a **LangGraph multi-agent AI chatbot** that can answer natural-language questions about your portfolio, current market themes, and recent events by querying the knowledge graph in real time. Ask it "What's happening with NVDA?" and it pulls live, structured data — not hallucinations.
 
 ---
-
-
-
-
 
 Neo4J graph
 
