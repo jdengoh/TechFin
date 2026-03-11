@@ -125,15 +125,10 @@ SECRET_KEY=change-me-in-production
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=your_neo4j_password
-OPENAI_API_KEY=your_openai_key          # required for AI chatbot + entity extraction
-RAPIDAPI_KEY=your_rapidapi_key_here
-RAPIDAPI_YAHOO_FINANCE_HOST=yahoo-finance15.p.rapidapi.com
-REDDIT_CLIENT_ID=your_reddit_client_id
-REDDIT_CLIENT_SECRET=your_reddit_client_secret
-REDDIT_USER_AGENT=TechFin/1.0 by YourRedditUsername
+OPENAI_API_KEY=your_openai_key
 ```
 
-> API keys are optional for most features — the app falls back to mock data if they are missing. `OPENAI_API_KEY` is required for the AI chatbot and graph entity extraction.
+> `OPENAI_API_KEY` is required for the AI chatbot and graph entity extraction.
 
 ---
 
