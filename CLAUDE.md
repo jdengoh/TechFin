@@ -64,8 +64,13 @@ Vite proxies `/api/*` requests to FastAPI on `http://localhost:8000`.
 
 #### Database (SQLAlchemy 2 + Alembic)
 - `app/database.py` — async engine, `async_sessionmaker`, `get_db` dependency
-- `app/models/` — `User` (username, password_hash, has_onboarded) + `Holding` (ticker, quantity, user_id)
+- `app/models/` — `User` (username, password_hash, has_onboarded) + `Holding` (ticker, quantity, user_id) + `ChatSession`/`ChatMessage` (chat history)
 - Alembic configured for async migrations with psycopg
+
+#### AI Agent (`app/ai/`)
+- `app/ai/graph.py` — LangGraph `compiled_graph` powering the multi-agent chatbot
+- Chat sessions and messages persisted to PostgreSQL via `app/models/chat.py`
+- Responses streamed to the frontend via `StreamingResponse`
 
 #### API Routes (`app/routes/`)
 - `auth.py` — POST register, POST login, GET me
@@ -80,6 +85,7 @@ Vite proxies `/api/*` requests to FastAPI on `http://localhost:8000`.
 - `sectors.py` — GET sector data (auth-protected)
 - `market_movers.py` — GET market movers data (auth-protected)
 - `graph.py` — 7 graph query endpoints (see Graph API below)
+- `ai_agents.py` — multi-agent chatbot: chat sessions CRUD + streaming responses via LangGraph (`/api/ai/`)
 
 #### External API Services (`app/services/`)
 All follow try-real-API / fallback-to-mock pattern:
@@ -127,6 +133,8 @@ APScheduler also runs the same pipeline hourly via `fetch_yahoo_rss()`, recordin
   /settings         → SettingsPage
   /event/:eventId   → EventDetailPage
   /theme/:themeName → ThemeDetailPage
+  /entity/:entityType/:entityName → EntityDetailPage
+  /chat             → ChatPage (multi-agent chatbot with session management)
 ```
 
 #### Auth
@@ -181,10 +189,34 @@ OPENAI_MODEL=gpt-4o-mini
 - Created by `scripts/seed.py`
 
 ## Design Patterns & Conventions
-See `AGENTS.md` for the full list. Key points:
+
 - **Route root paths use `""`** — `@router.get("")` not `@router.get("/")` (avoids 307 redirects)
 - **Pydantic schemas ≠ ORM models** — `app/schemas/` = API contracts; `app/models/` = DB tables
 - **UUID PKs** — all models use UUID v4, server-generated, serialized as strings
 - **bcrypt directly** — uses `bcrypt` library, not `passlib`
 - **greenlet required** — SQLAlchemy async needs `greenlet` in deps
 - **Mock fallback is intentional** — never remove; UI must always render without real API keys
+- **Dependency injection** — all route handlers use `Depends(get_db)` and `Depends(get_current_user)`; `get_db` yields an async session that auto-commits and rolls back on error
+- **snake_case → camelCase** — backend returns snake_case JSON; SWR hook mapper functions transform to camelCase before components see data
+- **Holdings upsert** — `unique(user_id, ticker)` constraint; POST `/api/holdings` upserts, not inserts
+- **Optimistic updates** — `useHoldings` uses SWR `mutate` with `optimisticData` for instant UI feedback with rollback on error
+
+## Common Tasks
+
+### Add a new API endpoint
+1. Create/update Pydantic schema in `backend/app/schemas/`
+2. Create route in `backend/app/routes/` with `APIRouter(prefix="/api/your-route")`
+3. Register in `backend/app/main.py`: `app.include_router(your_route.router)`
+4. Use `@router.get("")` for root path (not `"/"`)
+
+### Add a new frontend page
+1. Create page in `frontend/src/pages/`
+2. Add route in `frontend/src/App.tsx` inside the protected `Route` children
+3. Add nav link in `frontend/src/components/layout/TopNav.tsx`
+4. Create SWR hook in `frontend/src/hooks/` if fetching data
+
+### Add a new database table
+1. Create SQLAlchemy model in `backend/app/models/`
+2. Import in `backend/app/models/__init__.py`
+3. `uv run alembic revision --autogenerate -m "add table_name"`
+4. `uv run alembic upgrade head`

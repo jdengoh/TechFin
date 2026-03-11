@@ -4,22 +4,29 @@
 
 TechFin is an AI-powered personal finance dashboard that doesn't just track your stocks — it reads the world. By aggregating news across multiple sources, performing deep sentiment analysis, and mapping relationships between global events and financial sectors, TechFin gives retail investors the kind of macro-awareness that used to be reserved for institutional traders.
 
+**Live demo:** [tech-fin-xi.vercel.app](https://tech-fin-xi.vercel.app/)
+
+[![Demo Video](https://img.youtube.com/vi/Jn0XqxhPRJE/maxresdefault.jpg)](https://youtu.be/Jn0XqxhPRJE)
+
+---
+
 ### The Problem
+
+Most retail investors react to the market. TechFin helps you get ahead of it.
 
 TechFin is world-event-focused. It identifies like most mentioned geopolitical world events, mergers and acquisitions, as well as government macro-policy announcements to find the the most up to date investor sentiments related to the affected sectors, and quickly makes investment suggestions.
 
-
 ### What Makes TechFin Different
 
+At its core, TechFin uses a **custom knowledge graph** (powered by Neo4j) to model the relationships between news articles, world events, sectors, and tickers. This enables intelligent graph traversals that surface the most contextually relevant insights for each event — not just the loudest headlines, but the most *connected* ones.
 
-
-At its core, TechFin uses a **custom graph structure** (powered by Neo4j) to model the relationships between news articles, world events, sectors, and tickers. This enables intelligent graph traversals that surface the most contextually relevant insights for each event — not just the loudest headlines, but the most connected ones.
+On top of that graph sits a **LangGraph multi-agent AI chatbot** that can answer natural-language questions about your portfolio, current market themes, and recent events by querying the knowledge graph in real time. Ask it "What's happening with NVDA?" and it pulls live, structured data — not hallucinations.
 
 ---
 
 <!-- INSERT NEO4J GRAPH VISUALIZATION HERE -->
 <!-- Suggested: screenshot or export of the TechFin knowledge graph showing nodes (events, sectors, tickers) and their relationships -->
-![Neo4J graph](neo4j.png)
+![Neo4J graph](./neo4j.png)
 
 ---
 
@@ -30,7 +37,8 @@ At its core, TechFin uses a **custom graph structure** (powered by Neo4j) to mod
 | **Event Intelligence** | Detects top geopolitical events, M&A, and macro-policy shifts in real time |
 | **Sentiment Grid** | Sector-by-sector sentiment heatmap updated daily |
 | **Graph-Powered Matching** | Neo4j graph traversals match news to the most affected sectors and tickers |
-| **Portfolio Recommendations** | Investment suggestions derived from current sentiment, tuned to your holdings |
+| **AI Chatbot** | LangGraph multi-agent assistant that queries your knowledge graph to answer market questions |
+| **Portfolio Recommendations** | LLM-powered stock suggestions tuned to your holdings |
 | **Multi-Source Aggregation** | Yahoo Finance, Reddit, Twitter, LinkedIn — all in one feed |
 | **Social Pulse** | Community sentiment from Reddit and social platforms per ticker |
 
@@ -42,7 +50,7 @@ At its core, TechFin uses a **custom graph structure** (powered by Neo4j) to mod
 
 **Backend** — FastAPI · SQLAlchemy 2 (async) · PostgreSQL · Alembic
 
-**Intelligence Layer** — Neo4j (graph traversal) · Custom sentiment pipeline · RapidAPI (Yahoo Finance) · Reddit OAuth
+**Intelligence Layer** — Neo4j (graph traversal) · LangGraph + LangChain · OpenAI gpt-4o-mini · RapidAPI (Yahoo Finance) · Reddit OAuth · APScheduler (hourly ingestion)
 
 ---
 
@@ -64,7 +72,13 @@ At its core, TechFin uses a **custom graph structure** (powered by Neo4j) to mod
 
 - Node.js ≥ 18
 - Python ≥ 3.12 + [uv](https://docs.astral.sh/uv/)
-- PostgreSQL running locally with a database named `techfin`
+- Docker (for PostgreSQL + Neo4j)
+
+### Infrastructure
+
+```bash
+docker compose -f docker-compose.infra.yaml up -d
+```
 
 ### Backend
 
@@ -87,6 +101,8 @@ npm run dev                 # dev server on localhost:5173
 
 The Vite dev server proxies all `/api/*` requests to the FastAPI backend on `:8000`.
 
+Or run everything at once: `make dev`
+
 ---
 
 ## Environment Variables
@@ -96,6 +112,10 @@ Copy `backend/.env.example` to `backend/.env` and fill in:
 ```env
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@localhost:5432/techfin
 SECRET_KEY=change-me-in-production
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your_neo4j_password
+OPENAI_API_KEY=your_openai_key          # required for AI chatbot + entity extraction
 RAPIDAPI_KEY=your_rapidapi_key_here
 RAPIDAPI_YAHOO_FINANCE_HOST=yahoo-finance15.p.rapidapi.com
 REDDIT_CLIENT_ID=your_reddit_client_id
@@ -103,13 +123,13 @@ REDDIT_CLIENT_SECRET=your_reddit_client_secret
 REDDIT_USER_AGENT=TechFin/1.0 by YourRedditUsername
 ```
 
-> API keys are optional — the app falls back to mock data if they are missing.
+> API keys are optional for most features — the app falls back to mock data if they are missing. `OPENAI_API_KEY` is required for the AI chatbot and graph entity extraction.
 
 ---
 
 ## Demo
 
-After seeding, log in with:
+Try it live at [tech-fin-xi.vercel.app](https://tech-fin-xi.vercel.app/) or run locally and log in with:
 
 - **Username:** `demo`
 - **Password:** `password`
