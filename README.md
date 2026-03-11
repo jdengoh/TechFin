@@ -32,7 +32,7 @@ On top of that graph sits a **LangGraph multi-agent AI chatbot** that can answer
 
 ---
 
-Neo4J graph
+![Neo4J graph](neo4j.png)
 
 ---
 
